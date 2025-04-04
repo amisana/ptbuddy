@@ -78,7 +78,16 @@ export default function FaxCoverSheet({ formData }: FaxCoverSheetProps) {
         <div className="mb-6">
           <div className="flex">
             <div className="w-16 font-bold">FROM:</div>
-            <div>{formData.ptName || ''}{formData.ptCredentials ? `, ${formData.ptCredentials}` : ''}</div>
+            <div>
+              {formData.ptName || ''}
+              {formData.ptCredentials ? 
+                (formData.ptCredentials === 'Other' ? 
+                  `, ${formData.ptCredentialsOther}` : 
+                  `, ${formData.ptCredentials}`
+                ) : 
+                ''
+              }
+            </div>
           </div>
           <div className="flex">
             <div className="w-16"></div>
@@ -145,11 +154,8 @@ export default function FaxCoverSheet({ formData }: FaxCoverSheetProps) {
         <div className="mb-6">
           <div className="font-bold mb-1">Initial Evaluation ({formatDate(formData.initialEvalDate)}):</div>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Pain {formData.initialPainScale || '0'}/10 with {formData.initialPainTriggers || ''}</li>
+            <li>Pain {formData.initialPainScale || '0'}/10</li>
             <li>{formData.anatomicalLocation || ''}</li>
-            <li>{formData.painDescriptors?.join('/') || ''}</li>
-            <li>{formData.associatedSymptoms || ''}</li>
-            <li>{formData.functionalLimitations || ''}</li>
           </ul>
         </div>
         
@@ -157,20 +163,17 @@ export default function FaxCoverSheet({ formData }: FaxCoverSheetProps) {
         <div className="mb-6">
           <div className="font-bold mb-1">Current Status ({currentDate}):</div>
           <div className="pl-6">
-            {formData.currentStatus ? (
-              <p>{formData.currentStatus}</p>
-            ) : (
-              <ul className="list-disc space-y-1">
-                <li>Pain {formData.currentPainScale || '0'}/10</li>
-              </ul>
-            )}
+            <ul className="list-disc space-y-1">
+              <li>Pain {formData.currentPainScale || '0'}/10</li>
+            </ul>
           </div>
         </div>
 
         {/* Summary of Objective Improvements - New Section */}
         {(formData.romMeasurements?.some(m => m.initialValue && m.currentValue) ||
           formData.strengthTests?.some(t => t.initialValue && t.currentValue) ||
-          formData.functionalTests?.some(t => t.initialValue && t.currentValue)) && (
+          formData.functionalTests?.some(t => t.initialValue && t.currentValue) ||
+          formData.painMeasurements?.some(p => p.initialValue && p.currentValue)) && (
           <div className="mb-6 border-2 border-gray-200 p-4 bg-gray-50">
             <div className="font-bold mb-2 text-center">Summary of Objective Improvements:</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -224,6 +227,29 @@ export default function FaxCoverSheet({ formData }: FaxCoverSheetProps) {
                       </div>
                       <div>
                         <strong>{test.description}:</strong> {improvement.value}% improvement
+                      </div>
+                    </div>
+                  );
+                }).filter(Boolean)}
+                
+              {/* Pain Summary - special handling since decrease in pain is positive */}
+              {formData.painMeasurements?.filter(p => p.initialValue && p.currentValue && p.description)
+                .map((pain, index) => {
+                  // For pain, a decrease is an improvement
+                  const initial = parseFloat(pain.initialValue);
+                  const current = parseFloat(pain.currentValue);
+                  
+                  if (isNaN(initial) || isNaN(current) || initial === 0 || current >= initial) return null;
+                  
+                  const percentChange = Math.round(((initial - current) / initial) * 100);
+                  
+                  return (
+                    <div key={index} className="flex items-center">
+                      <div className="w-6 h-6 mr-2 flex items-center justify-center rounded-full bg-green-100 text-green-800">
+                        ↓
+                      </div>
+                      <div>
+                        <strong>{pain.description}:</strong> {percentChange}% pain reduction
                       </div>
                     </div>
                   );
@@ -321,6 +347,47 @@ export default function FaxCoverSheet({ formData }: FaxCoverSheetProps) {
                         )}
                         <br />
                         <span className="text-sm">Initial: {formatDate(test.initialDate)}  Current: {formatDate(test.currentDate)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {formData.painMeasurements?.filter(p => p.description && (p.initialValue || p.currentValue)).length > 0 && (
+              <div className="mb-3">
+                <h3 className="text-sm uppercase font-semibold text-gray-600 mb-2">Pain Measurements</h3>
+                {formData.painMeasurements.filter(p => p.description && (p.initialValue || p.currentValue)).map((pain, index) => {
+                  // For pain, a decrease is an improvement
+                  const initial = parseFloat(pain.initialValue);
+                  const current = parseFloat(pain.currentValue);
+                  let improvement = null;
+                  
+                  if (!isNaN(initial) && !isNaN(current) && initial !== 0) {
+                    const percentChange = Math.round(((initial - current) / initial) * 100);
+                    improvement = {
+                      value: percentChange,
+                      positive: percentChange > 0
+                    };
+                  }
+                  
+                  return (
+                    <div key={index} className="flex items-start mb-2">
+                      <div className="mr-2">□</div>
+                      <div>
+                        <strong>{pain.description}:</strong> 
+                        <span className="font-semibold text-gray-700">{pain.initialValue}</span> → 
+                        <span className={`font-semibold ${improvement?.positive ? 'text-green-700' : improvement ? 'text-red-700' : 'text-gray-700'}`}>
+                          {pain.currentValue}
+                        </span> 
+                        {pain.unit && ` ${pain.unit}`}
+                        {improvement && (
+                          <span className={`ml-2 text-sm ${improvement.positive ? 'text-green-700' : 'text-red-700'}`}>
+                            ({improvement.positive ? '-' : '+'}{Math.abs(improvement.value)}%)
+                          </span>
+                        )}
+                        <br />
+                        <span className="text-sm">Initial: {formatDate(pain.initialDate)}  Current: {formatDate(pain.currentDate)}</span>
                       </div>
                     </div>
                   );

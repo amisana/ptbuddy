@@ -12,6 +12,7 @@ export type FormData = {
   // PT/Facility Info
   ptName: string;
   ptCredentials: string;
+  ptCredentialsOther: string;
   facilityName: string;
   recipientName: string;
   recipientFax: string;
@@ -24,11 +25,7 @@ export type FormData = {
   // Initial Symptoms (kept for FaxCoverSheet)
   initialEvalDate: string;
   initialPainScale: number;
-  initialPainTriggers: string;
-  painDescriptors: string[];
   anatomicalLocation: string;
-  associatedSymptoms: string;
-  functionalLimitations: string;
   
   // Workers' Comp Specific Fields
   injuryDate: string;
@@ -62,10 +59,18 @@ export type FormData = {
     currentDate: string;
     unit?: string;
   }[];
+  
+  painMeasurements: {
+    description: string;
+    initialValue: string;
+    initialDate: string;
+    currentValue: string;
+    currentDate: string;
+    unit?: string;
+  }[];
 
   // Progress Tracking
   currentPainScale: number;
-  currentStatus: string;
   needMorePT: boolean;
   continuedPTGoals: string;
   additionalNotes: string;
@@ -77,6 +82,7 @@ export default function PTForm() {
     defaultValues: {
       ptName: '',
       ptCredentials: '',
+      ptCredentialsOther: '',
       facilityName: '',
       recipientName: '',
       recipientFax: '',
@@ -87,11 +93,7 @@ export default function PTForm() {
 
       initialEvalDate: '',
       initialPainScale: 0,
-      initialPainTriggers: '',
-      painDescriptors: [],
       anatomicalLocation: '',
-      associatedSymptoms: '',
-      functionalLimitations: '',
       
       // Workers' Comp Fields
       injuryDate: '',
@@ -101,9 +103,9 @@ export default function PTForm() {
       romMeasurements: [],
       strengthTests: [],
       functionalTests: [],
+      painMeasurements: [],
 
       currentPainScale: 0,
-      currentStatus: '',
       needMorePT: false,
       continuedPTGoals: '',
       additionalNotes: ''

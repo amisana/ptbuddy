@@ -7,7 +7,7 @@ import MeasurementCard from './MeasurementCard';
 import { format } from 'date-fns';
 
 // Template definitions with proper typing
-type MeasurementType = 'rom' | 'strength' | 'functional';
+type MeasurementType = 'rom' | 'strength' | 'functional' | 'pain';
 
 interface TemplateItem {
   type: MeasurementType;
@@ -45,6 +45,13 @@ const templates: Templates = {
     { type: 'functional', description: 'Standing Tolerance', unit: 'minutes' },
     { type: 'functional', description: 'Walking Tolerance', unit: 'minutes' },
     { type: 'functional', description: 'Stair Climbing', unit: 'steps' }
+  ],
+  pain: [
+    { type: 'pain', description: 'Pain with Walking', unit: 'pain scale (0-10)' },
+    { type: 'pain', description: 'Pain with Standing', unit: 'pain scale (0-10)' },
+    { type: 'pain', description: 'Pain with Lifting', unit: 'pain scale (0-10)' },
+    { type: 'pain', description: 'Pain at Rest', unit: 'pain scale (0-10)' },
+    { type: 'pain', description: 'Pain at Night', unit: 'pain scale (0-10)' }
   ]
 };
 
@@ -83,10 +90,19 @@ export default function ObjectiveMeasurements() {
     control,
     name: 'functionalTests',
   });
+  
+  const { 
+    fields: painFields, 
+    append: painAppend, 
+    remove: painRemove 
+  } = useFieldArray({
+    control,
+    name: 'painMeasurements',
+  });
 
   // Apply date to all fields of a specific type
   const applyDateToFields = (
-    fieldType: 'romMeasurements' | 'strengthTests' | 'functionalTests', 
+    fieldType: 'romMeasurements' | 'strengthTests' | 'functionalTests' | 'painMeasurements', 
     dateType: 'initialDate' | 'currentDate', 
     date: string
   ) => {
@@ -96,7 +112,9 @@ export default function ObjectiveMeasurements() {
       ? romFields 
       : fieldType === 'strengthTests' 
         ? strengthFields 
-        : functionalFields;
+        : fieldType === 'painMeasurements'
+          ? painFields
+          : functionalFields;
     
     fields.forEach((_, index) => {
       setValue(`${fieldType}.${index}.${dateType}`, date, {
@@ -115,6 +133,7 @@ export default function ObjectiveMeasurements() {
     applyDateToFields('romMeasurements', 'initialDate', date);
     applyDateToFields('strengthTests', 'initialDate', date);
     applyDateToFields('functionalTests', 'initialDate', date);
+    applyDateToFields('painMeasurements', 'initialDate', date);
   };
   
   // Handle current date changes
@@ -125,6 +144,7 @@ export default function ObjectiveMeasurements() {
     applyDateToFields('romMeasurements', 'currentDate', date);
     applyDateToFields('strengthTests', 'currentDate', date);
     applyDateToFields('functionalTests', 'currentDate', date);
+    applyDateToFields('painMeasurements', 'currentDate', date);
   };
   
   // Add a new measurement with proper field initialization
@@ -133,7 +153,9 @@ export default function ObjectiveMeasurements() {
       ? 'degrees' 
       : type === 'strength' 
         ? 'MMT' 
-        : 'minutes';
+        : type === 'pain'
+          ? 'pain scale (0-10)'
+          : 'minutes';
     
     const newItem = { 
       description: '', 
@@ -148,6 +170,8 @@ export default function ObjectiveMeasurements() {
       romAppend(newItem);
     } else if (type === 'strength') {
       strengthAppend(newItem);
+    } else if (type === 'pain') {
+      painAppend(newItem);
     } else {
       functionalAppend(newItem);
     }
@@ -172,6 +196,8 @@ export default function ObjectiveMeasurements() {
         romAppend(newItem);
       } else if (item.type === 'strength') {
         strengthAppend(newItem);
+      } else if (item.type === 'pain') {
+        painAppend(newItem);
       } else {
         functionalAppend(newItem);
       }
@@ -186,6 +212,7 @@ export default function ObjectiveMeasurements() {
       applyDateToFields('romMeasurements', 'initialDate', initialEvalDate);
       applyDateToFields('strengthTests', 'initialDate', initialEvalDate);
       applyDateToFields('functionalTests', 'initialDate', initialEvalDate);
+      applyDateToFields('painMeasurements', 'initialDate', initialEvalDate);
     }
   }, [initialEvalDate]);
   
@@ -200,7 +227,8 @@ export default function ObjectiveMeasurements() {
   const hasNoMeasurements = 
     romFields.length === 0 && 
     strengthFields.length === 0 && 
-    functionalFields.length === 0;
+    functionalFields.length === 0 &&
+    painFields.length === 0;
   
   return (
     <section className="bg-white p-6 rounded-lg shadow-md">
@@ -263,6 +291,7 @@ export default function ObjectiveMeasurements() {
                 <option value="back">Back Set</option>
                 <option value="strength">Strength Set</option>
                 <option value="functional">Functional Set</option>
+                <option value="pain">Pain Set</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-blue-500">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
@@ -302,6 +331,17 @@ export default function ObjectiveMeasurements() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               Functional
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => addMeasurement('pain')}
+              className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-md flex items-center"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Pain
             </button>
           </div>
         </div>
@@ -352,6 +392,16 @@ export default function ObjectiveMeasurements() {
             index={index}
             type="functional"
             onRemove={() => functionalRemove(index)}
+          />
+        ))}
+        
+        {painFields.map((field, index) => (
+          <MeasurementCard
+            key={field.id}
+            fieldPrefix="painMeasurements"
+            index={index}
+            type="pain"
+            onRemove={() => painRemove(index)}
           />
         ))}
       </div>

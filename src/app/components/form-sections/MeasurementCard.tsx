@@ -5,9 +5,9 @@ import { FormData } from '../PTForm';
 import { useEffect } from 'react';
 
 type MeasurementCardProps = {
-  fieldPrefix: 'romMeasurements' | 'strengthTests' | 'functionalTests';
+  fieldPrefix: 'romMeasurements' | 'strengthTests' | 'functionalTests' | 'painMeasurements';
   index: number;
-  type: 'rom' | 'strength' | 'functional';
+  type: 'rom' | 'strength' | 'functional' | 'pain';
   onRemove: () => void;
 };
 
@@ -44,6 +44,12 @@ export default function MeasurementCard({
       className: 'bg-green-100 text-green-800',
       defaultUnit: 'minutes',
       placeholder: 'Standing Tolerance'
+    },
+    pain: {
+      label: 'Pain Measurement',
+      className: 'bg-red-100 text-red-800',
+      defaultUnit: 'pain scale (0-10)',
+      placeholder: 'Pain with Walking'
     }
   };
   
@@ -78,6 +84,26 @@ export default function MeasurementCard({
       }
     }
     
+    // Special handling for pain scale (lower is better)
+    if (type === 'pain') {
+      try {
+        const initial = parseFloat(initialValue);
+        const current = parseFloat(currentValue);
+        
+        if (isNaN(initial) || isNaN(current)) return null;
+        
+        // For pain, reduction (negative change) is positive improvement
+        const percentChange = ((initial - current) / (initial || 1)) * 100;
+        return {
+          value: Math.round(percentChange),
+          positive: percentChange > 0,
+          isPain: true
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+    
     // Standard numeric improvement calculation
     try {
       const initial = parseFloat(initialValue);
@@ -89,7 +115,8 @@ export default function MeasurementCard({
       return {
         value: Math.round(percentChange),
         positive: percentChange > 0,
-        isMMT: false
+        isMMT: false,
+        isPain: false
       };
     } catch (e) {
       return null;
@@ -108,6 +135,22 @@ export default function MeasurementCard({
     { value: '4/5', label: '4/5 - Good, full ROM against resistance' },
     { value: '5/5', label: '5/5 - Normal strength' }
   ];
+  
+  // Pain scale options (0-10)
+  const painScaleOptions = [
+    { value: '', label: 'Select Pain Level' },
+    { value: '0', label: '0 - No Pain' },
+    { value: '1', label: '1 - Minimal' },
+    { value: '2', label: '2 - Mild' },
+    { value: '3', label: '3 - Uncomfortable' },
+    { value: '4', label: '4 - Moderate' },
+    { value: '5', label: '5 - Distracting' },
+    { value: '6', label: '6 - Distressing' },
+    { value: '7', label: '7 - Severe' },
+    { value: '8', label: '8 - Intense' },
+    { value: '9', label: '9 - Excruciating' },
+    { value: '10', label: '10 - Worst Possible' }
+  ];
 
   // Show appropriate input based on type
   const renderValueInput = (field: 'initialValue' | 'currentValue') => {
@@ -124,6 +167,29 @@ export default function MeasurementCard({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               {mmtOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          )}
+        />
+      );
+    }
+    
+    if (type === 'pain' && unit.includes('pain scale')) {
+      return (
+        <Controller
+          control={control}
+          name={`${fieldPrefix}.${index}.${field}`}
+          render={({ field: { onChange, value, ref } }) => (
+            <select
+              onChange={onChange}
+              value={value || ''}
+              ref={ref}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              {painScaleOptions.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -201,8 +267,10 @@ export default function MeasurementCard({
             {improvement.positive ? '↑' : '↓'} 
             {improvement.isMMT 
               ? `${Math.abs(improvement.value)} MMT level${Math.abs(improvement.value) !== 1 ? 's' : ''}` 
-              : `${Math.abs(improvement.value)}%`} 
-            {improvement.positive ? 'improvement' : 'decrease'}
+              : improvement.isPain
+                ? `${Math.abs(improvement.value)}% pain reduction`
+                : `${Math.abs(improvement.value)}%`} 
+            {improvement.isPain ? '' : (improvement.positive ? 'improvement' : 'decrease')}
           </div>
         </div>
       )}
