@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp/
+.yarn/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Cache and generated files
+.cache/
+*.tsbuildinfo
+next-env.d.ts
+
+# Large binary/media files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# Environment and config
+.env*
+.vercel
+*.config.js
+
+# Logs
+*.log*
+
+# System files
+.DS_Store
+
+# Specific files
+beta.html 
