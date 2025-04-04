@@ -56,7 +56,7 @@ const templates: Templates = {
 };
 
 export default function ObjectiveMeasurements() {
-  const { register, control, watch, setValue, formState } = useFormContext<FormData>();
+  const { control, watch, setValue } = useFormContext<FormData>();
   const [initialDate, setInitialDate] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   
@@ -214,7 +214,7 @@ export default function ObjectiveMeasurements() {
       applyDateToFields('functionalTests', 'initialDate', initialEvalDate);
       applyDateToFields('painMeasurements', 'initialDate', initialEvalDate);
     }
-  }, [initialEvalDate]);
+  }, [initialEvalDate, initialDate, applyDateToFields]);
   
   // Initialize with current date if not already set
   useEffect(() => {
@@ -222,7 +222,7 @@ export default function ObjectiveMeasurements() {
       const today = format(new Date(), 'yyyy-MM-dd');
       setCurrentDate(today);
     }
-  }, []);
+  }, [currentDate]);
   
   const hasNoMeasurements = 
     romFields.length === 0 && 

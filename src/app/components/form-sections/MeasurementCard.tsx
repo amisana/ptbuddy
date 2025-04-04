@@ -17,7 +17,7 @@ export default function MeasurementCard({
   type, 
   onRemove 
 }: MeasurementCardProps) {
-  const { register, control, watch, setValue, formState: { errors } } = useFormContext<FormData>();
+  const { register, control, watch, setValue } = useFormContext<FormData>();
   
   // Use watch to properly trigger re-renders when values change
   const description = watch(`${fieldPrefix}.${index}.description`);
@@ -99,7 +99,7 @@ export default function MeasurementCard({
           positive: percentChange > 0,
           isPain: true
         };
-      } catch (e) {
+      } catch (_) {
         return null;
       }
     }
@@ -118,7 +118,7 @@ export default function MeasurementCard({
         isMMT: false,
         isPain: false
       };
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   };
@@ -177,7 +177,7 @@ export default function MeasurementCard({
       );
     }
     
-    if (type === 'pain' && unit.includes('pain scale')) {
+    if (type === 'pain' && unit && unit.includes('pain scale')) {
       return (
         <Controller
           control={control}

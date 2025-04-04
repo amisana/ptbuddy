@@ -13,7 +13,7 @@ export default function FaxCoverSheet({ formData }: FaxCoverSheetProps) {
     if (!dateString) return '';
     try {
       return format(new Date(dateString), 'M/d/yy');
-    } catch (error) {
+    } catch (_) {
       return dateString;
     }
   };
